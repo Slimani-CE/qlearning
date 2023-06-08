@@ -19,7 +19,7 @@ public class GridCell extends Pane {
         this.setMinSize(width, height);
         this.setMaxSize(width, height);
         this.controller = controller;
-
+        this.setStyle("-fx-border-color: black; -fx-border-width: 1px;");
         this.setOnMouseClicked(e -> {
             System.out.println("GridCell debug: setOnMouseClicked() | isClicked: " + isClicked);
             if (!isClicked)
@@ -63,7 +63,8 @@ public class GridCell extends Pane {
 
     public void unclick() {
         if(isClicked) {
-            this.setStyle("-fx-background-color: none");
+            this.setStyle(null);
+            this.setStyle("-fx-border-color: black; -fx-border-width: 1px;");
             if (this.getChildren().size() != 0) {
                 this.getChildren().remove(0);
             }

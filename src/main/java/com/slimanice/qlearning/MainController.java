@@ -7,11 +7,15 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
-import javafx.scene.layout.GridPane;
+import javafx.scene.image.Image;
+import javafx.scene.layout.*;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.ResourceBundle;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainController implements Initializable {
 
@@ -52,9 +56,11 @@ public class MainController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         initGrid();
+        detailsLabel.setText("Specify the size of your grid");
 
         // Add listener to the init btn
         initBtn.setOnMouseClicked(mouseEvent -> {
+            System.out.println("Init...");
 
             initGrid();
             System.out.println(gridSize);
@@ -65,6 +71,7 @@ public class MainController implements Initializable {
             if(checkInputFields()) {
                 // Remove old path in the gui
                 removeOldPath();
+                detailsLabel.setText("Q Learning is running...");
                 qLearning = new QLearning(intGrid, startI, startJ, gridSize, alpha, gamma, maxEpoch);
                 qLearning.runQLearning();
                 bestPath = qLearning.getBestPath();
@@ -125,6 +132,10 @@ public class MainController implements Initializable {
     }
 
     private void initGrid() {
+        if(gridSizeField.getText().isEmpty()) {
+            detailsLabel.setText("Specify the size of your grid");
+            return;
+        }
         // Get grid size
         try{
             gridSize = Integer.parseInt(gridSizeField.getText());
@@ -132,7 +143,25 @@ public class MainController implements Initializable {
         catch (Exception e){
 
         }
-//        grid.getChildren().clear();
+        detailsLabel.setText("");
+        cells.clear();
+        bestPath.clear();
+        grid.getChildren().clear();
+        grid.getRowConstraints().clear();
+        grid.getColumnConstraints().clear();
+        for (int row = 0; row < gridSize; row++) {
+            RowConstraints rowConstraints = new RowConstraints();
+            rowConstraints.setFillHeight(true);
+            grid.getRowConstraints().add(rowConstraints);
+        }
+
+        for (int col = 0; col < gridSize; col++) {
+            ColumnConstraints colConstraints = new ColumnConstraints();
+            colConstraints.setFillWidth(true);
+            grid.getColumnConstraints().add(colConstraints);
+        }
+        grid.setVgap(.2);
+        grid.setHgap(.2);
         cellHeight = grid.getPrefHeight() / gridSize;
         cellWidth = grid.getPrefWidth() / gridSize;
 
@@ -157,26 +186,43 @@ public class MainController implements Initializable {
     }
 
     private void displayBestPath() {
-        for(int i = 1; i < bestPath.size() - 1; i++){
-            Action action = bestPath.get(i);
-            GridCell cell = cells.get(action.getCurrI()*gridSize + action.getCurrJ());
-            cell.setClicked(true);
-            cell.setCellType("path");
-            // Change gui
-            cell.setStyle("-fx-border-color: black; -fx-border-width: 1px; -fx-background-color: #fd862c");
-            Label label = new Label();
-            label.setText(action.getAction());
-            label.setStyle("-fx-text-fill: rgba(32,14,79,0.73)");
-            cell.getChildren().add(label);
-        }
-        if(bestPath.size() != 0){
-            Action lastAction = bestPath.get(bestPath.size() - 1);
-            if(intGrid[lastAction.getCurrI()][lastAction.getCurrJ()] == 1){
-                detailsLabel.setText("Arrived to target !");
+        Timer timer = new Timer();
+        timer.scheduleAtFixedRate(new TimerTask() {
+            int i = 1;
+            @Override
+            public void run() {
+                System.out.println("DEBUG");
+                Action action = bestPath.get(i);
+                GridCell cell = cells.get(action.getCurrI() * gridSize + action.getCurrJ());
+                cell.setClicked(true);
+                cell.setCellType("path");
+                cell.setStyle("-fx-border-color: black; -fx-border-width: 1px;" +
+                        " -fx-background-image: url(" + MainController.class.getResource("media/" + action.getAction() + ".png") + ");" +
+                        "-fx-background-repeat: no-repeat;" +
+                        "-fx-background-size: cover; " +
+                        "-fx-background-position: center center; " +
+                        "-fx-alignment: center;" +
+                        "-fx-background-size: 100%; ");
+                Label label = new Label();
+//            label.setText(action.getAction());
+                label.setStyle("-fx-text-fill: rgba(32,14,79,0.73)");
+                Platform.runLater(() -> {
+                    cell.getChildren().add(label);
+                });
+                if(++i == bestPath.size() - 1) {
+                    timer.cancel();
+                    if (bestPath.size() != 0) {
+                        Platform.runLater(() -> {
+                            Action lastAction = bestPath.get(bestPath.size() - 1);
+                            if (intGrid[lastAction.getCurrI()][lastAction.getCurrJ()] == 1) {
+                                detailsLabel.setText("Arrived to target !");
+                            } else
+                                detailsLabel.setText("Stopped by wall");
+                        });
+                    }
+                }
             }
-            else
-                detailsLabel.setText("Stopped by wall");
-        }
+        }, 0, 200);
     }
 
     private void displayGrid() {
@@ -238,6 +284,7 @@ public class MainController implements Initializable {
 
         // Change gui
         cell.setStyle(null);
+        cell.setStyle("-fx-border-color: black; -fx-border-width: 1px;");
         cell.getChildren().clear();
 
         startI = -1;
@@ -247,6 +294,7 @@ public class MainController implements Initializable {
     private void removeWall(GridCell cell) {
         // Change gui
         cell.setStyle(null);
+        cell.setStyle("-fx-border-color: black; -fx-border-width: 1px;");
         cell.getChildren().clear();
 
         intGrid[cell.getRow()][cell.getCol()] = 0;
@@ -255,6 +303,7 @@ public class MainController implements Initializable {
     private void removeTarget(GridCell cell) {
         // Change gui
         cell.setStyle(null);
+        cell.setStyle("-fx-border-color: black; -fx-border-width: 1px;");
         cell.getChildren().clear();
 
         intGrid[cell.getRow()][cell.getCol()] = 0;
@@ -262,10 +311,17 @@ public class MainController implements Initializable {
 
     private void putStartPosition(GridCell cell) {
         // Change gui
-        cell.setStyle("-fx-border-color: black; -fx-border-width: 1px; -fx-background-color: #75779a");
+        cell.setStyle("-fx-border-color: black; -fx-border-width: 1px;" +
+                " -fx-background-image: url("+ MainController.class.getResource("media/robot1.png")+");" +
+                "-fx-background-repeat: no-repeat;" +
+                "-fx-background-size: cover; " +
+                "-fx-background-position: center center; " +
+                "-fx-alignment: center;" +
+                "-fx-background-size: 60%");
+
         cell.setCellType("Start position");
         Label label = new Label();
-        label.setText("Start");
+//        label.setText("Start");
         cell.getChildren().add(label);
         if(currStartPosition != null && (currStartPosition.getRow() != cell.getRow() || currStartPosition.getCol() != cell.getCol())) {
             uncheckCell(currStartPosition);
@@ -282,9 +338,15 @@ public class MainController implements Initializable {
 
     private void putWall(GridCell cell) {
         // Change gui
-        cell.setStyle("-fx-border-color: black; -fx-border-width: 1px; -fx-background-color: #25273a");
+        cell.setStyle("-fx-border-color: black; -fx-border-width: 1px;" +
+                " -fx-background-image: url("+ MainController.class.getResource("media/wall.png")+");" +
+                "-fx-background-repeat: no-repeat;" +
+                "-fx-background-size: cover; " +
+                "-fx-background-position: center center; " +
+                "-fx-alignment: center;" +
+                "-fx-background-size: 100%");
         Label label = new Label();
-        label.setText("Wall");
+//        label.setText("Wall");
         label.setStyle("-fx-text-fill: white");
         cell.getChildren().add(label);
         cell.setCellType("Wall");
@@ -294,9 +356,16 @@ public class MainController implements Initializable {
     }
 
     private void putTarget(GridCell cell) {
-        cell.setStyle("-fx-border-color: black; -fx-border-width: 1px; -fx-background-color: #36dc69");
+        // Change gui
+        cell.setStyle("-fx-border-color: black; -fx-border-width: 1px;" +
+                " -fx-background-image: url("+ MainController.class.getResource("media/target.png")+");" +
+                "-fx-background-repeat: no-repeat;" +
+                "-fx-background-size: cover; " +
+                "-fx-background-position: center center; " +
+                "-fx-alignment: center;" +
+                "-fx-background-size: 60%");
         Label label = new Label();
-        label.setText("Target");
+//        label.setText("Target");
         cell.getChildren().add(label);
         cell.setCellType("Target");
 

@@ -122,7 +122,7 @@ public class QLearning {
             executeAction(act);
         }
         if(isStopped){
-            System.out.println("Agent is stopped by a wall!!!");
+//            System.out.println("Agent is stopped by a wall!!!");
             bestPath.add(new Action(stateI, stateJ, "Stopped by wall!"));
         }
         else bestPath.add(new Action(stateI, stateJ, "Agent arrived!"));
@@ -137,15 +137,15 @@ public class QLearning {
             resetState();
             while (!finished()) {
                 currentState = stateI * gridSize + stateJ;
-                act = chooseAction(0.4);
+                act = chooseAction(0.5);
                 nextState = executeAction(act);
                 bestAction = chooseAction(0);
                 qTable[currentState][act] = qTable[currentState][act] + alpha * (grid[stateI][stateJ] + gamma * qTable[nextState][bestAction] - qTable[currentState][act]);
             }
             it++;
         }
-        displayQTable();
-        displayActions();
+//        displayQTable();
+//        displayActions();
         makeBestPath();
     }
 
