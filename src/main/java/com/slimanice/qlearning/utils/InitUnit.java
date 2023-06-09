@@ -12,6 +12,7 @@ public class InitUnit {
     private int startI = 2;
     private int startJ = 4;
     private int nbrAgents = 4;
+    private double eps;
     private int[][] grid = new int[][]{
             {0, 0, 0, 0, 1},
             {0, -1, -1, -1, -1},
@@ -24,7 +25,7 @@ public class InitUnit {
 
     }
 
-    public InitUnit(int gridSize, double alpha, double gamma, int maxEpoch, int startI, int startJ, int[][] grid, int nbrAgents) {
+    public InitUnit(int gridSize, double alpha, double gamma, int maxEpoch, int startI, int startJ, int[][] grid, int nbrAgents, double eps) {
         this.gridSize = gridSize;
         this.alpha = alpha;
         this.gamma = gamma;
@@ -33,6 +34,7 @@ public class InitUnit {
         this.startJ = startJ;
         this.grid = grid;
         this.nbrAgents = nbrAgents;
+        this.eps = eps;
     }
 
     public int getGridSize() {
@@ -99,6 +101,14 @@ public class InitUnit {
         return nbrAgents;
     }
 
+    public void setEps(double eps) {
+        this.eps = eps;
+    }
+
+    public double getEps() {
+        return eps;
+    }
+
     @Override
     public String toString() {
         return "InitUnit{" +
@@ -111,4 +121,5 @@ public class InitUnit {
                 ", grid=" + Arrays.toString(grid) +
                 '}';
     }
+    
 }

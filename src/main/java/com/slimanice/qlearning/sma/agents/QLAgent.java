@@ -47,7 +47,7 @@ public class QLAgent extends Agent {
 
         InitUnit initUnit = (InitUnit) getArguments()[0];
 
-        QLearning qLearning = new QLearning(initUnit.getGrid(), initUnit.getStartI(), initUnit.getStartJ(), initUnit.getGridSize(), initUnit.getAlpha(), initUnit.getGamma(), initUnit.getMaxEpoch());
+        QLearning qLearning = new QLearning(initUnit.getGrid(), initUnit.getStartI(), initUnit.getStartJ(), initUnit.getGridSize(), initUnit.getAlpha(), initUnit.getGamma(), initUnit.getMaxEpoch(), initUnit.getEps());
 
         qLearning.runQLearning();
 

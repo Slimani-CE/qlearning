@@ -13,6 +13,7 @@ public class QLearning {
     private double alpha = 0.1;
     private double gamma = 0.9;
     private int maxEpoch = 10000;
+    private double eps = 0.9;
     private double[][] qTable;
     private final int[][] actions;
     private final String[] strActions;
@@ -21,7 +22,7 @@ public class QLearning {
     private int startI, startJ;
     private ArrayList<Action> bestPath = new ArrayList<>();
 
-    public QLearning(int [][]grid, int startI, int startJ, int gridSize, double alpha, double gamma, int maxEpoch){
+    public QLearning(int [][]grid, int startI, int startJ, int gridSize, double alpha, double gamma, int maxEpoch, double eps){
         actions = new int[][]{
                 {0, -1},  // Left
                 {0, 1},   // Right
@@ -41,6 +42,7 @@ public class QLearning {
         this.alpha = alpha;
         this.gamma = gamma;
         this.maxEpoch = maxEpoch;
+        this.eps = eps;
         qTable = new double[gridSize * gridSize][ACTION_SIZE];
     }
 
@@ -88,17 +90,27 @@ public class QLearning {
         return grid[stateI][stateJ] == 1;
     }
 
-    private void displayQTable(){
-        System.out.println("**************** Q Table ****************");
-        for(double []row: qTable){
-            System.out.print("[");
-            for(double qvalue: row){
-                System.out.printf(qvalue + ", ");
-            }
-            System.out.println("]");
-        }
-    }
 
+    public void runQLearning(){
+        int it = 0;
+        int currentState;
+        int nextState;
+        int act, bestAction;
+        while(it < maxEpoch) {
+            resetState();
+            while (!finished()) {
+                currentState = stateI * gridSize + stateJ;
+                act = chooseAction(eps);
+                nextState = executeAction(act);
+                bestAction = chooseAction(0);
+                qTable[currentState][act] = qTable[currentState][act] + alpha * (grid[stateI][stateJ] + gamma * qTable[nextState][bestAction] - qTable[currentState][act]);
+            }
+            it++;
+        }
+//        displayQTable();
+//        displayActions();
+        makeBestPath();
+    }
     private void displayActions(){
         System.out.println("**************** Best actions ****************");
         resetState();
@@ -113,6 +125,16 @@ public class QLearning {
         else System.out.println("(" + stateI + ", " + stateJ + ")");
     }
 
+    private void displayQTable(){
+        System.out.println("**************** Q Table ****************");
+        for(double []row: qTable){
+            System.out.print("[");
+            for(double qvalue: row){
+                System.out.printf(qvalue + ", ");
+            }
+            System.out.println("]");
+        }
+    }
     private void makeBestPath(){
         bestPath.clear();
         resetState();
@@ -127,28 +149,6 @@ public class QLearning {
         }
         else bestPath.add(new Action(stateI, stateJ, "Agent arrived!"));
     }
-
-    public void runQLearning(){
-        int it = 0;
-        int currentState;
-        int nextState;
-        int act, bestAction;
-        while(it < maxEpoch) {
-            resetState();
-            while (!finished()) {
-                currentState = stateI * gridSize + stateJ;
-                act = chooseAction(0.5);
-                nextState = executeAction(act);
-                bestAction = chooseAction(0);
-                qTable[currentState][act] = qTable[currentState][act] + alpha * (grid[stateI][stateJ] + gamma * qTable[nextState][bestAction] - qTable[currentState][act]);
-            }
-            it++;
-        }
-//        displayQTable();
-//        displayActions();
-        makeBestPath();
-    }
-
     public ArrayList<Action> getBestPath() {
         return bestPath;
     }

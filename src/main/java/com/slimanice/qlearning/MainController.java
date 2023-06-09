@@ -37,6 +37,7 @@ public class MainController implements Initializable {
     private double alpha;
     private double gamma;
     private int maxEpoch;
+    private double eps;
     @FXML
     private TextField alphaField;
     @FXML
@@ -45,6 +46,12 @@ public class MainController implements Initializable {
     private TextField maxEpochField;
     @FXML
     private Label detailsLabel;
+    @FXML
+    private Slider slider;
+    @FXML
+    private Label explorationLabel;
+    @FXML
+    private Label exploitationLabel;
     int intGrid[][];
     private GridCell currStartPosition;
     private QLearning qLearning;
@@ -72,7 +79,7 @@ public class MainController implements Initializable {
                 // Remove old path in the gui
                 removeOldPath();
                 detailsLabel.setText("Q Learning is running...");
-                qLearning = new QLearning(intGrid, startI, startJ, gridSize, alpha, gamma, maxEpoch);
+                qLearning = new QLearning(intGrid, startI, startJ, gridSize, alpha, gamma, maxEpoch, eps);
                 qLearning.runQLearning();
                 bestPath = qLearning.getBestPath();
                 displayBestPath();
@@ -83,6 +90,13 @@ public class MainController implements Initializable {
         resetBtn.setOnMouseClicked(mouseEvent -> {
             displayGrid();
             removeOldPath();
+        });
+
+        // Add listener to the slider element
+        slider.setOnMouseMoved(mouseEvent -> {
+            double percent = slider.getValue();
+            explorationLabel.setText("Exploration ("+ (int)percent +"%)");
+            exploitationLabel.setText("Exploration ("+ (100 - (int)percent) +"%)");
         });
     }
 
@@ -100,6 +114,8 @@ public class MainController implements Initializable {
             alpha = Double.parseDouble(alphaField.getText());
             gamma = Double.parseDouble(gammaField.getText());
             maxEpoch = Integer.parseInt(maxEpochField.getText());
+            eps = slider.getValue() / 100;
+            System.out.println("Eps: " + eps);
         }catch (Exception e){
             // Alert user to fill all fields
             Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -144,6 +160,7 @@ public class MainController implements Initializable {
 
         }
         detailsLabel.setText("");
+        intGrid = new int[gridSize][gridSize];
         cells.clear();
         bestPath.clear();
         grid.getChildren().clear();
@@ -172,8 +189,6 @@ public class MainController implements Initializable {
                 grid.add(cell, j, i);
                 cells.add(cell);
             }
-        grid.setGridLinesVisible(true);
-        intGrid = new int[gridSize][gridSize];
     }
 
     private void removeOldPath() {
@@ -191,25 +206,7 @@ public class MainController implements Initializable {
             int i = 1;
             @Override
             public void run() {
-                System.out.println("DEBUG");
-                Action action = bestPath.get(i);
-                GridCell cell = cells.get(action.getCurrI() * gridSize + action.getCurrJ());
-                cell.setClicked(true);
-                cell.setCellType("path");
-                cell.setStyle("-fx-border-color: black; -fx-border-width: 1px;" +
-                        " -fx-background-image: url(" + MainController.class.getResource("media/" + action.getAction() + ".png") + ");" +
-                        "-fx-background-repeat: no-repeat;" +
-                        "-fx-background-size: cover; " +
-                        "-fx-background-position: center center; " +
-                        "-fx-alignment: center;" +
-                        "-fx-background-size: 100%; ");
-                Label label = new Label();
-//            label.setText(action.getAction());
-                label.setStyle("-fx-text-fill: rgba(32,14,79,0.73)");
-                Platform.runLater(() -> {
-                    cell.getChildren().add(label);
-                });
-                if(++i == bestPath.size() - 1) {
+                if(i == bestPath.size() - 1) {
                     timer.cancel();
                     if (bestPath.size() != 0) {
                         Platform.runLater(() -> {
@@ -221,8 +218,27 @@ public class MainController implements Initializable {
                         });
                     }
                 }
+                else {
+                    Action action = bestPath.get(i);
+                    GridCell cell = cells.get(action.getCurrI() * gridSize + action.getCurrJ());
+                    cell.setClicked(true);
+                    cell.setCellType("path");
+                    cell.setStyle("-fx-border-color: black; -fx-border-width: 1px;" +
+                            " -fx-background-image: url(" + MainController.class.getResource("media/" + action.getAction() + ".png") + ");" +
+                            "-fx-background-repeat: no-repeat;" +
+                            "-fx-background-position: center center; " +
+                            "-fx-alignment: center;" +
+                            "-fx-background-size: 100%; ");
+                    Label label = new Label();
+//            label.setText(action.getAction());
+                    label.setStyle("-fx-text-fill: rgba(32,14,79,0.73)");
+                    Platform.runLater(() -> {
+                        cell.getChildren().add(label);
+                    });
+                    i++;
+                }
             }
-        }, 0, 200);
+        }, 0, 100);
     }
 
     private void displayGrid() {
@@ -239,7 +255,8 @@ public class MainController implements Initializable {
 
     public void checkCell(GridCell cell){
         cell.setClicked(true);
-
+        displayGrid();
+        removeOldPath();
         // Check clicked radio
         String label = ((RadioButton)radio.getSelectedToggle()).getText();
         switch (label){
@@ -314,7 +331,6 @@ public class MainController implements Initializable {
         cell.setStyle("-fx-border-color: black; -fx-border-width: 1px;" +
                 " -fx-background-image: url("+ MainController.class.getResource("media/robot1.png")+");" +
                 "-fx-background-repeat: no-repeat;" +
-                "-fx-background-size: cover; " +
                 "-fx-background-position: center center; " +
                 "-fx-alignment: center;" +
                 "-fx-background-size: 60%");
@@ -341,7 +357,6 @@ public class MainController implements Initializable {
         cell.setStyle("-fx-border-color: black; -fx-border-width: 1px;" +
                 " -fx-background-image: url("+ MainController.class.getResource("media/wall.png")+");" +
                 "-fx-background-repeat: no-repeat;" +
-                "-fx-background-size: cover; " +
                 "-fx-background-position: center center; " +
                 "-fx-alignment: center;" +
                 "-fx-background-size: 100%");
@@ -360,7 +375,6 @@ public class MainController implements Initializable {
         cell.setStyle("-fx-border-color: black; -fx-border-width: 1px;" +
                 " -fx-background-image: url("+ MainController.class.getResource("media/target.png")+");" +
                 "-fx-background-repeat: no-repeat;" +
-                "-fx-background-size: cover; " +
                 "-fx-background-position: center center; " +
                 "-fx-alignment: center;" +
                 "-fx-background-size: 60%");
